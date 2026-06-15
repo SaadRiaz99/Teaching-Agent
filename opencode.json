@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "smit-teacher": {
+      "description": "SMIT Teaching Agent — advanced RAG-powered tutor for Sikkim Manipal Institute of Technology courses, syllabus, and academic content.",
+      "mode": "primary",
+      "model": "anthropic/claude-sonnet-4-6",
+      "permission": { "edit": "deny", "bash": "ask" }
+    }
+  },
+  "references": {
+    "smit-data": {
+      "path": "data",
+      "description": "SMIT document repository for RAG ingestion"
+    }
+  }
+}
