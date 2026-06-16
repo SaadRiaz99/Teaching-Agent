@@ -26,7 +26,14 @@ dashboard_path = Path(__file__).resolve().parent.parent / "dashboard"
 if dashboard_path.exists():
     app.mount("/", StaticFiles(directory=str(dashboard_path), html=True), name="dashboard")
 
-agent = TeachingAgent()
+_agent: Optional[TeachingAgent] = None
+
+
+def get_agent() -> TeachingAgent:
+    global _agent
+    if _agent is None:
+        _agent = TeachingAgent()
+    return _agent
 
 
 class AskRequest(BaseModel):
@@ -58,17 +65,22 @@ class HistoryResponse(BaseModel):
 @app.get("/health")
 async def health():
     store = get_vector_store()
+    try:
+        agent = get_agent()
+        llm_name = agent.pipeline.llm.name if hasattr(agent.pipeline, "llm") else "unknown"
+    except Exception:
+        llm_name = "degraded (agent failed to load)"
     return {
         "status": "healthy",
         "chunks_in_db": store.count(),
-        "llm_provider": agent.pipeline.llm.name if hasattr(agent.pipeline, "llm") else "unknown",
+        "llm_provider": llm_name,
     }
 
 
 @app.post("/ask", response_model=AskResponse)
 async def ask(request: AskRequest):
     try:
-        result = agent.ask(request.query, session_id=request.session_id)
+        result = get_agent().ask(request.query, session_id=request.session_id)
         return AskResponse(
             answer=result.answer,
             sources=result.sources,
@@ -94,7 +106,7 @@ async def ingest_file(file: UploadFile = File(...)):
         tmp_path = tmp.name
 
     try:
-        result = agent.ingest(tmp_path)
+        result = get_agent().ingest(tmp_path)
         return IngestResponse(**result)
     finally:
         os.unlink(tmp_path)
@@ -107,7 +119,7 @@ async def ingest_directory(path: str = Query(..., description="Path to directory
     if not p.exists() or not p.is_dir():
         raise HTTPException(status_code=400, detail=f"Directory not found: {path}")
     try:
-        result = agent.ingest(str(p))
+        result = get_agent().ingest(str(p))
         return IngestResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -115,13 +127,13 @@ async def ingest_directory(path: str = Query(..., description="Path to directory
 
 @app.get("/history/{session_id}", response_model=HistoryResponse)
 async def get_history(session_id: str):
-    turns = agent.get_history(session_id)
+    turns = get_agent().get_history(session_id)
     return HistoryResponse(turns=turns)
 
 
 @app.delete("/history/{session_id}")
 async def clear_history(session_id: str):
-    agent.clear_history(session_id)
+    get_agent().clear_history(session_id)
     return {"status": "cleared"}
 
 
