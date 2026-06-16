@@ -10,6 +10,10 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
 
 # IDE
 .vscode/
@@ -22,6 +26,20 @@ build/
 data/cache/
 data/chroma_db/
 
+# Vector DB persistence
+vectordb/
+
+# Uploads
+data/uploads/
+
+# Server logs
+server_log.txt
+
 # OS
 .DS_Store
 Thumbs.db
+
+# Temporary scripts
+ingest_script.py
+temp_*.py
+simple_server.py
