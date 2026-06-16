@@ -15,6 +15,8 @@ class DocumentLoader:
 
     def load(self, path: str) -> List[Document]:
         p = Path(path)
+        if not p.exists():
+            return []
         if p.is_dir():
             return self._load_directory(p)
         return [self._load_file(p)]
