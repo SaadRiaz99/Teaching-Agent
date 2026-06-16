@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMIT Teaching Agent — Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+  .header { background: #1e293b; border-bottom: 1px solid #334155; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
+  .header h1 { font-size: 1.25rem; font-weight: 600; color: #38bdf8; }
+  .header .status { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.ok { background: #22c55e; }
+  .dot.err { background: #ef4444; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.5rem; }
+  .card h2 { font-size: 1rem; font-weight: 600; color: #94a3b8; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card.full { grid-column: 1 / -1; }
+  textarea, input[type="text"] { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem; color: #e2e8f0; font-size: 0.9rem; }
+  textarea:focus, input[type="text"]:focus { outline: none; border-color: #38bdf8; }
+  textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+  .btn { background: #38bdf8; color: #0f172a; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; font-size: 0.875rem; transition: background 0.2s; }
+  .btn:hover { background: #7dd3fc; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center; }
+  .stat-value { font-size: 2rem; font-weight: 700; color: #38bdf8; }
+  .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+  .answer-box { background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 1rem; margin-top: 0.75rem; min-height: 60px; white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6; }
+  .answer-box .meta { font-size: 0.75rem; color: #64748b; margin-top: 0.75rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+  .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+  .badge.teaching { background: #1e3a5f; color: #60a5fa; }
+  .badge.syllabus { background: #3b1f3b; color: #c084fc; }
+  .badge.assignment { background: #1f3b2f; color: #4ade80; }
+  .badge.general { background: #3b3b1f; color: #facc15; }
+  .badge.greeting { background: #1f3b3b; color: #22d3ee; }
+  .log-area { background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem; max-height: 200px; overflow-y: auto; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; }
+  .log-area .log-line { padding: 0.15rem 0; border-bottom: 1px solid #1e293b; }
+  .log-area .log-line:last-child { border-bottom: none; }
+  .log-line time { color: #64748b; margin-right: 0.5rem; }
+  .file-upload { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  .file-upload input[type="file"] { display: none; }
+  .file-label { background: #334155; color: #e2e8f0; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; }
+  .file-label:hover { background: #475569; }
+  .file-name { font-size: 0.8rem; color: #94a3b8; }
+  .row { display: flex; gap: 0.75rem; }
+  .row > * { flex: 1; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>SMIT Teaching Agent</h1>
+  <span class="status">
+    <span class="dot ok" id="healthDot"></span>
+    <span id="healthText">Checking...</span>
+  </span>
+</div>
+
+<div class="container">
+  <div class="card full">
+    <h2>Ask a Question</h2>
+    <div class="row">
+      <textarea id="queryInput" placeholder="e.g. What courses does the CSE department offer?"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="askBtn">Ask</button>
+      <button class="btn" id="clearBtn" style="background:#475569;color:#e2e8f0;">Clear</button>
+    </div>
+    <div id="answerArea"></div>
+  </div>
+
+  <div class="card">
+    <h2>System Stats</h2>
+    <div class="stat-grid">
+      <div><div class="stat-value" id="statChunks">-</div><div class="stat-label">Chunks</div></div>
+      <div><div class="stat-value" id="statSessions">-</div><div class="stat-label">Sessions</div></div>
+      <div><div class="stat-value" id="statStatus">-</div><div class="stat-label">Status</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Ingest Documents</h2>
+    <div class="file-upload">
+      <input type="file" id="fileInput" multiple accept=".txt,.md,.pdf,.docx">
+      <label class="file-label" for="fileInput">Choose Files</label>
+      <span class="file-name" id="fileName">No files selected</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="ingestBtn" style="background:#22c55e;color:#0f172a;">Upload & Ingest</button>
+    </div>
+    <div id="ingestResult" style="margin-top:0.75rem;font-size:0.875rem;"></div>
+  </div>
+
+  <div class="card full">
+    <h2>Activity Log</h2>
+    <div class="log-area" id="logArea">
+      <div class="log-line">— Ready —</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+const log = document.getElementById('logArea');
+
+function addLog(msg) {
+  const div = document.createElement('div');
+  div.className = 'log-line';
+  const t = document.createElement('time');
+  t.textContent = new Date().toLocaleTimeString();
+  div.appendChild(t);
+  div.appendChild(document.createTextNode(msg));
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function api(method, path, body) {
+  const opts = { method, headers: {} };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(`${API}${path}`, opts);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+async function checkHealth() {
+  try {
+    const d = await api('GET', '/health');
+    document.getElementById('healthDot').className = 'dot ok';
+    document.getElementById('healthText').textContent = `Healthy · ${d.chunks_in_db} chunks · ${d.llm_provider}`;
+    document.getElementById('statChunks').textContent = d.chunks_in_db;
+    document.getElementById('statStatus').textContent = 'Healthy';
+    addLog(`System healthy — ${d.chunks_in_db} chunks, LLM: ${d.llm_provider}`);
+  } catch (e) {
+    document.getElementById('healthDot').className = 'dot err';
+    document.getElementById('healthText').textContent = 'Offline';
+    document.getElementById('statStatus').textContent = 'Offline';
+    addLog(`Health check failed: ${e.message}`);
+  }
+}
+
+document.getElementById('askBtn').addEventListener('click', async () => {
+  const q = document.getElementById('queryInput').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('askBtn');
+  btn.disabled = true;
+  btn.textContent = 'Thinking...';
+  const area = document.getElementById('answerArea');
+  area.innerHTML = '<div class="answer-box">🤔 Thinking...</div>';
+
+  try {
+    const d = await api('POST', '/ask', { query: q, session_id: 'dashboard' });
+    const mode = d.mode || 'general';
+    const conf = (d.confidence * 100).toFixed(0);
+    const cacheTag = d.from_cache ? ' <span style="color:#64748b;font-size:0.75rem;">(cached)</span>' : '';
+    area.innerHTML = `<div class="answer-box">
+      ${d.answer}
+      <div class="meta">
+        <span class="badge ${mode}">${mode}</span>
+        <span>Confidence: ${conf}%</span>
+        <span>Model: ${d.model}</span>
+        ${d.verified ? '<span style="color:#22c55e;">✓ Verified</span>' : ''}
+        ${cacheTag}
+      </div>
+    </div>`;
+    if (d.sources && d.sources.length) {
+      const srcs = d.sources.slice(0, 5).map(s => `${s.filename || 'unknown'} (${(s.score * 100).toFixed(1)}%)`).join(', ');
+      area.innerHTML += `<div style="font-size:0.75rem;color:#64748b;margin-top:0.25rem;">Sources: ${srcs}</div>`;
+    }
+    addLog(`Asked: "${q.substring(0, 60)}..." → ${mode} (${conf}%)`);
+  } catch (e) {
+    area.innerHTML = `<div class="answer-box" style="color:#ef4444;">Error: ${e.message}</div>`;
+    addLog(`Error asking: ${e.message}`);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Ask';
+});
+
+document.getElementById('clearBtn').addEventListener('click', async () => {
+  document.getElementById('queryInput').value = '';
+  document.getElementById('answerArea').innerHTML = '';
+  try {
+    await api('DELETE', '/history/dashboard');
+    addLog('Conversation history cleared');
+  } catch { }
+});
+
+document.getElementById('fileInput').addEventListener('change', () => {
+  const fi = document.getElementById('fileInput');
+  document.getElementById('fileName').textContent = fi.files.length
+    ? `${fi.files.length} file(s) selected`
+    : 'No files selected';
+});
+
+document.getElementById('ingestBtn').addEventListener('click', async () => {
+  const fi = document.getElementById('fileInput');
+  if (!fi.files.length) return;
+  const btn = document.getElementById('ingestBtn');
+  btn.disabled = true;
+  btn.textContent = 'Ingesting...';
+  const resultDiv = document.getElementById('ingestResult');
+
+  const form = new FormData();
+  for (const f of fi.files) form.append('file', f);
+
+  try {
+    const res = await fetch(`${API}/ingest`, { method: 'POST', body: form });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const d = await res.json();
+    resultDiv.innerHTML = `<span style="color:#22c55e;">✓ Ingested ${d.files} file(s) → ${d.chunks} chunks</span>`;
+    addLog(`Ingested ${d.files} files → ${d.chunks} chunks`);
+    checkHealth();
+    fi.value = '';
+    document.getElementById('fileName').textContent = 'No files selected';
+  } catch (e) {
+    resultDiv.innerHTML = `<span style="color:#ef4444;">Error: ${e.message}</span>`;
+    addLog(`Ingest error: ${e.message}`);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Upload & Ingest';
+});
+
+setInterval(checkHealth, 15000);
+checkHealth();
+addLog('Dashboard loaded — monitoring SMIT Teaching Agent API');
+</script>
+</body>
+</html>
