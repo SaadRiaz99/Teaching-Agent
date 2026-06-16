@@ -8,6 +8,8 @@ class QueryRouter:
         self.llm = get_llm()
 
     def route(self, query: str) -> str:
+        if not query or not query.strip():
+            return "general"
         lowered = query.lower()
         greeting_words = {"hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening"}
         if any(g in lowered for g in greeting_words) and len(query.split()) <= 5:

@@ -1,5 +1,6 @@
 import hashlib
 import json
+from dataclasses import dataclass
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 
@@ -158,6 +159,3 @@ class RAGPipeline:
 
         self._save_cache(cache_key, result)
         return result
-
-
-from dataclasses import dataclass
