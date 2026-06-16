@@ -22,6 +22,8 @@ class TeachingAgent:
         mode = self.router.route(query)
 
         if mode == "greeting":
+            memory = self._get_memory(session_id)
+            memory.add_turn(query=query, answer="Hello! I'm the SMIT Teaching Assistant.", sources=[], confidence=1.0, mode="greeting")
             return RAGResult(
                 answer="Hello! I'm the SMIT Teaching Assistant. I can help you with course concepts, syllabus information, assignment guidance, and general questions about Sikkim Manipal Institute of Technology. How can I help you today?",
                 sources=[],
