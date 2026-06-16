@@ -6,17 +6,22 @@ from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain.schema import Document
 
+from app.rag.embeddings import SimpleMockEmbeddings
 from app.utils.config import settings
 from app.utils.logger import logger
 
 
 class RetrievalManager:
     def __init__(self):
-        self.embeddings = OpenAIEmbeddings(
-            model=settings.EMBEDDING_MODEL,
-            openai_api_key=settings.LLM_API_KEY,
-            openai_api_base=settings.LLM_API_BASE,
-        )
+        if settings.EMBEDDING_TYPE == "local":
+            logger.info("RetrievalManager: Using Mock Embeddings")
+            self.embeddings = SimpleMockEmbeddings(dimension=settings.EMBEDDING_DIMENSION)
+        else:
+            self.embeddings = OpenAIEmbeddings(
+                model=settings.EMBEDDING_MODEL,
+                openai_api_key=settings.LLM_API_KEY,
+                openai_api_base=settings.LLM_API_BASE,
+            )
         self.persist_directory = settings.CHROMA_PERSIST_DIR
         self.collection_name = settings.COLLECTION_NAME
         self.top_k = settings.RETRIEVAL_TOP_K
@@ -41,7 +46,13 @@ class RetrievalManager:
     ) -> list[tuple[Document, float]]:
         k = top_k or self.top_k
         db = self.vector_store
-        results = db.similarity_search_with_relevance_scores(query, k=k)
+        
+        try:
+            results = db.similarity_search_with_relevance_scores(query, k=k)
+        except Exception as e:
+            logger.error(f"Retrieval failed: {e}")
+            return []
+            
         logger.info(f"Retrieved {len(results)} chunks for query: {query[:60]}...")
         for doc, score in results:
             logger.debug(f"  score={score:.4f} | source={doc.metadata.get('source', 'unknown')}")
