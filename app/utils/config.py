@@ -26,6 +26,7 @@ class Settings:
     RETRIEVAL_TOP_K: int = int(os.getenv("RETRIEVAL_TOP_K", "4"))
 
     VECTOR_DB_TYPE: str = os.getenv("VECTOR_DB_TYPE", "chroma")
+    EMBEDDING_TYPE: str = os.getenv("EMBEDDING_TYPE", "openai")  # openai or local
     QDRANT_URL: str = os.getenv("QDRANT_URL", "")
     PINECONE_API_KEY: str = os.getenv("PINECONE_API_KEY", "")
     PINECONE_ENVIRONMENT: str = os.getenv("PINECONE_ENVIRONMENT", "")
