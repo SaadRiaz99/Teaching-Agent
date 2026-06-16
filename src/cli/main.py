@@ -5,7 +5,13 @@ from pathlib import Path
 from src.agents.teaching_agent import TeachingAgent
 
 app = typer.Typer(name="smit-teacher", help="SMIT Teaching Agent — RAG-powered educational assistant")
-agent = TeachingAgent()
+_agent: Optional[TeachingAgent] = None
+
+def get_agent():
+    global _agent
+    if _agent is None:
+        _agent = TeachingAgent()
+    return _agent
 
 
 @app.command()
