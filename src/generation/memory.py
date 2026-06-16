@@ -1,4 +1,5 @@
 import json
+import re
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from pathlib import Path
@@ -39,7 +40,9 @@ class ConversationMemory:
         self._load()
 
     def _path(self) -> Path:
-        return MEMORY_DIR / f"memory_{self.session_id}.json"
+        safe_id = re.sub(r"[^\w\-]", "_", self.session_id)
+        safe_id = safe_id[:200]
+        return MEMORY_DIR / f"memory_{safe_id}.json"
 
     def _load(self):
         p = self._path()
