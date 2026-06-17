@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 import hashlib
 import pickle
+import numpy as np
 from pathlib import Path
 from src.config import settings
 
@@ -14,6 +15,22 @@ class BaseEmbeddings(ABC):
     @abstractmethod
     def embed_query(self, text: str) -> List[float]:
         ...
+
+
+class SimpleMockEmbeddings(BaseEmbeddings):
+    def __init__(self, dimension: int = 384):
+        self.dimension = dimension
+
+    def embed(self, texts: List[str]) -> List[List[float]]:
+        results = []
+        for text in texts:
+            np.random.seed(hash(text) % 2**32)
+            results.append(np.random.rand(self.dimension).tolist())
+        return results
+
+    def embed_query(self, text: str) -> List[float]:
+        np.random.seed(hash(text) % 2**32)
+        return np.random.rand(self.dimension).tolist()
 
 
 class SentenceTransformerEmbeddings(BaseEmbeddings):
@@ -94,13 +111,19 @@ class CachedEmbeddings(BaseEmbeddings):
 _embedder: Optional[BaseEmbeddings] = None
 
 
-def get_embedder() -> BaseEmbeddings:
+def get_embedder(embedding_type: str = "") -> BaseEmbeddings:
     global _embedder
     if _embedder is not None:
         return _embedder
-    if settings.openai_embeddings:
+    etype = embedding_type or settings.embedding_type
+    if etype == "openai":
         inner: BaseEmbeddings = OpenAIEmbeddings()
+    elif etype == "mock":
+        inner = SimpleMockEmbeddings(settings.embedding_dimension)
     else:
-        inner = SentenceTransformerEmbeddings(settings.embedding_model)
+        try:
+            inner = SentenceTransformerEmbeddings(settings.embedding_model)
+        except Exception:
+            inner = SimpleMockEmbeddings(settings.embedding_dimension)
     _embedder = CachedEmbeddings(inner)
     return _embedder

@@ -1,3 +1,3 @@
-from .embedder import get_embedder
+from .embedder import get_embedder, SimpleMockEmbeddings
 
-__all__ = ["get_embedder"]
+__all__ = ["get_embedder", "SimpleMockEmbeddings"]

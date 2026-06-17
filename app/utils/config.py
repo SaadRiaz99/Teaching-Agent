@@ -9,14 +9,22 @@ class Settings:
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
 
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama")
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
     LLM_API_BASE: str = os.getenv("LLM_API_BASE", "https://api.openai.com/v1")
     LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-4o-mini")
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.3"))
     LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", "1024"))
 
-    EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
-    EMBEDDING_DIMENSION: int = int(os.getenv("EMBEDDING_DIMENSION", "1536"))
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2")
+
+    ZEN_API_KEY: str = os.getenv("ZEN_API_KEY", "")
+    ZEN_API_BASE: str = os.getenv("ZEN_API_BASE", "https://opencode.ai/zen/v1")
+    ZEN_MODEL: str = os.getenv("ZEN_MODEL", "opencode/big-pickle")
+
+    EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+    EMBEDDING_DIMENSION: int = int(os.getenv("EMBEDDING_DIMENSION", "384"))
 
     CHROMA_PERSIST_DIR: str = os.getenv("CHROMA_PERSIST_DIR", "vectordb")
     COLLECTION_NAME: str = os.getenv("COLLECTION_NAME", "smit_documents")

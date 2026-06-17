@@ -32,7 +32,7 @@ class SimpleMockEmbeddings(Embeddings):
 
 class EmbeddingManager:
     def __init__(self):
-        if settings.EMBEDDING_TYPE == "local":
+        if settings.EMBEDDING_TYPE in ("local", "mock"):
             logger.info("Initializing Mock Embeddings (no DLLs required)")
             self.embeddings = SimpleMockEmbeddings(dimension=settings.EMBEDDING_DIMENSION)
         else:

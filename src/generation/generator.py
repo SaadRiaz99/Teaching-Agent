@@ -104,6 +104,37 @@ class OllamaLLM(BaseLLM):
         return f"ollama/{self._model}"
 
 
+class ZenLLM(BaseLLM):
+    def __init__(self):
+        from openai import OpenAI
+        self._client = OpenAI(
+            api_key=settings.zen_api_key,
+            base_url=settings.zen_api_base,
+        )
+        self._model = settings.zen_model
+
+    def generate(self, prompt: str, system: Optional[str] = None, max_tokens: int = 1024, temperature: float = 0.3) -> LLMResponse:
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+        resp = self._client.chat.completions.create(
+            model=self._model,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        return LLMResponse(
+            text=resp.choices[0].message.content,
+            model=resp.model,
+            usage={"total_tokens": resp.usage.total_tokens} if resp.usage else None,
+        )
+
+    @property
+    def name(self) -> str:
+        return f"zen/{self._model}"
+
+
 _llm: Optional[BaseLLM] = None
 
 
@@ -112,12 +143,14 @@ def get_llm() -> BaseLLM:
     if _llm is not None:
         return _llm
     provider = settings.llm_provider
-    if provider == "claude":
-        _llm = ClaudeLLM()
-    elif provider == "openai":
-        _llm = OpenAILLM()
+    if provider == "zen":
+        _llm = ZenLLM()
     elif provider == "ollama":
         _llm = OllamaLLM()
+    elif provider == "openai":
+        _llm = OpenAILLM()
+    elif provider == "claude":
+        _llm = ClaudeLLM()
     else:
         raise ValueError(f"Unknown LLM provider: {provider}")
     return _llm
